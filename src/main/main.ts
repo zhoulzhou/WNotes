@@ -9,12 +9,15 @@ let mainWindow: any = null;
 function createWindow(): void {
   const { BrowserWindow } = require('electron');
   
+  const preloadPath = path.join(__dirname, 'preload.js');
+  console.log('Preload path:', preloadPath);
+  
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     title: 'WNotes',
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
     },
@@ -24,7 +27,11 @@ function createWindow(): void {
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../index.html'));
+    const htmlPath = path.join(__dirname, '../index.html');
+    console.log('Loading HTML file from:', htmlPath);
+    console.log('__dirname:', __dirname);
+    mainWindow.loadFile(htmlPath);
+    mainWindow.webContents.openDevTools();
   }
 
   mainWindow.on('closed', () => {

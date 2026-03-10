@@ -6,6 +6,7 @@
         + 新建笔记
       </button>
     </div>
+    <div class="error" v-if="error">{{ error }}</div>
     <div class="list-container">
       <NoteItem
         v-for="note in store.notes"
@@ -20,24 +21,44 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useStore } from '../store';
 import NoteItem from './NoteItem.vue';
 
 const store = useStore();
+const error = ref('');
 
 async function createNote() {
-  const id = `note-${Date.now()}`;
-  const title = '新笔记';
-  const result = await window.electronAPI.createNote(id, title);
-  store.addNote({
-    id: result.id,
-    title: result.title,
-    filePath: result.filePath,
-    updatedAt: Date.now(),
-    createdAt: Date.now(),
-  });
-  store.selectNote(id);
+  error.value = '';
+  console.log('Creating note...');
+  console.log('window.electronAPI:', window.electronAPI);
+  
+  if (!window.electronAPI) {
+    error.value = 'electronAPI 未定义，请检查 preload 脚本';
+    console.error('electronAPI is undefined');
+    return;
+  }
+  
+  try {
+    const id = `note-${Date.now()}`;
+    const title = '新笔记';
+    console.log('Calling createNote API...');
+    const result = await window.electronAPI.createNote(id, title);
+    console.log('createNote result:', result);
+    
+    store.addNote({
+      id: result.id,
+      title: result.title,
+      filePath: result.filePath,
+      updatedAt: Date.now(),
+      createdAt: Date.now(),
+    });
+    store.selectNote(id);
+    console.log('Note added to store');
+  } catch (e: any) {
+    error.value = '创建笔记失败: ' + e.message;
+    console.error('Error creating note:', e);
+  }
 }
 
 function selectNote(id: string) {
@@ -50,8 +71,13 @@ async function deleteNote(id: string) {
 }
 
 async function loadNotes() {
-  const notes = await window.electronAPI.getAllNotes();
-  store.setNotes(notes.sort((a, b) => b.updatedAt - a.updatedAt));
+  try {
+    const notes = await window.electronAPI.getAllNotes();
+    store.setNotes(notes.sort((a, b) => b.updatedAt - a.updatedAt));
+  } catch (e: any) {
+    error.value = '加载笔记失败: ' + e.message;
+    console.error('Error loading notes:', e);
+  }
 }
 
 onMounted(() => {
@@ -99,5 +125,13 @@ onMounted(() => {
 .list-container {
   flex: 1;
   overflow-y: auto;
+}
+
+.error {
+  padding: 8px 16px;
+  background-color: #fff2f0;
+  border-left: 3px solid #ff4d4f;
+  color: #ff4d4f;
+  font-size: 12px;
 }
 </style>

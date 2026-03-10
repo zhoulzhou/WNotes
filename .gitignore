@@ -33,8 +33,11 @@ yarn-debug.log*
 yarn-error.log*
 
 # Data
-data/*.db
-data/*.db-journal
+data/
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
 
 # Temporary files
 tmp/
