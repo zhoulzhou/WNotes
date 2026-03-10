@@ -14,6 +14,9 @@
         v-model="content"
         :onDrop="onDrop"
         :onUploadImg="onUploadImg"
+        :preview="false"
+        :toolbars="toolbars"
+        :drag="true"
         class="md-editor"
       />
     </div>
@@ -32,16 +35,21 @@ const title = ref('');
 const content = ref('');
 let currentNoteId: string | null = null;
 
+const toolbars = [
+  'bold', 'underline', 'italic', '-', 'title', 'strikeThrough', 'sub', 'sup',
+  'quote', 'unorderedList', 'orderedList', 'task', '-', 'codeRow', 'code',
+  'link', 'image', 'table', 'mermaid', 'katex', '-', 'revoke', 'next', 'save',
+  '=', 'pageFullscreen', 'fullscreen', 'preview', 'htmlPreview', 'catalog'
+];
+
 const selectedNote = computed(() => 
   store.notes.find(n => n.id === store.selectedNoteId)
 );
 
 async function loadNoteContent() {
   if (!store.selectedNoteId) return;
-  
   const note = store.notes.find(n => n.id === store.selectedNoteId);
   if (!note) return;
-  
   currentNoteId = note.id;
   title.value = note.title;
   const fileContent = await window.electronAPI.readNoteFile(note.filePath);
@@ -50,10 +58,8 @@ async function loadNoteContent() {
 
 const saveNote = debounce(async () => {
   if (!currentNoteId) return;
-  
   const note = store.notes.find(n => n.id === currentNoteId);
   if (!note) return;
-  
   await window.electronAPI.writeNoteFile(note.filePath, content.value);
   await window.electronAPI.updateNote(currentNoteId, title.value);
   store.updateNoteTitle(currentNoteId, title.value);
@@ -63,37 +69,84 @@ function onTitleChange() {
   saveNote();
 }
 
-watch(
-  () => content.value,
-  () => {
-    saveNote();
-  }
-);
+watch(() => content.value, () => { saveNote(); });
 
-watch(
-  () => store.selectedNoteId,
-  async () => {
-    await loadNoteContent();
-  }
-);
+watch(() => store.selectedNoteId, async () => {
+  await loadNoteContent();
+});
 
 async function onUploadImg(files: File[]): Promise<string[]> {
-  if (!currentNoteId) return [];
+  console.log('===== 开始上传图片 =====');
+  console.log('当前笔记 ID:', currentNoteId);
+  console.log('文件列表:', files);
+  console.log('window.electronAPI:', window.electronAPI);
   
-  const promises = files.map(async (file) => {
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const relativePath = await window.electronAPI.saveImage(buffer, currentNoteId);
-    return relativePath;
-  });
+  if (!currentNoteId) {
+    console.error('错误：没有当前笔记 ID');
+    alert('请先选择或创建一个笔记');
+    return [];
+  }
   
-  return Promise.all(promises);
+  if (!window.electronAPI) {
+    console.error('错误：electronAPI 未定义');
+    alert('系统错误：electronAPI 未定义');
+    return [];
+  }
+  
+  const imagePaths: string[] = [];
+  
+  for (const file of files) {
+    console.log('处理文件:', file.name, '类型:', file.type, '大小:', file.size);
+    
+    if (!file.type.startsWith('image/')) {
+      console.warn(`跳过非图片文件：${file.name}`);
+      continue;
+    }
+    
+    try {
+      console.log('读取文件为 ArrayBuffer...');
+      const arrayBuffer = await file.arrayBuffer();
+      console.log('ArrayBuffer 大小:', arrayBuffer.byteLength);
+      
+      console.log('转换为 Uint8Array...');
+      const uint8Array = new Uint8Array(arrayBuffer);
+      console.log('Uint8Array 长度:', uint8Array.length);
+      
+      console.log('调用 electronAPI.saveImage...');
+      const relativePath = await window.electronAPI.saveImage(uint8Array, currentNoteId);
+      console.log('返回的相对路径:', relativePath);
+      
+      const markdownImage = `\n![${file.name}](${relativePath})\n`;
+      console.log('生成的 Markdown:', markdownImage);
+      imagePaths.push(markdownImage);
+      
+      console.log(`✓ 图片 ${file.name} 上传成功`);
+    } catch (error) {
+      console.error('上传图片失败:', error);
+      console.error('错误详情:', JSON.stringify(error, null, 2));
+      alert(`上传图片 ${file.name} 失败：${error}`);
+    }
+  }
+  
+  console.log('===== 图片上传完成，共上传:', imagePaths.length, '张 =====');
+  return imagePaths;
 }
 
 async function onDrop(files: File[]): Promise<string[]> {
+  console.log('===== 检测到拖拽事件 =====');
+  console.log('拖拽的文件:', files);
+  console.log('文件数量:', files.length);
+  
+  if (files.length === 0) {
+    console.warn('没有检测到文件');
+    return [];
+  }
+  
   return onUploadImg(files);
 }
 
 onMounted(() => {
+  console.log('NoteEditor 组件已挂载');
   loadNoteContent();
 });
 </script>
@@ -154,5 +207,18 @@ onMounted(() => {
 
 :deep(.md-editor-container) {
   height: 100%;
+}
+
+:deep(.md-editor-preview-btn) {
+  display: none !important;
+}
+
+:deep(.md-editor-content) {
+  width: 100% !important;
+  border-right: none !important;
+}
+
+:deep(.md-editor-preview-wrapper) {
+  display: none !important;
 }
 </style>

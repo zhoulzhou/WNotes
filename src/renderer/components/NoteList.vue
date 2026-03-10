@@ -41,7 +41,7 @@ async function createNote() {
   
   try {
     const id = `note-${Date.now()}`;
-    const title = '新笔记';
+    const title = '新笔记标题';
     console.log('Calling createNote API...');
     const result = await window.electronAPI.createNote(id, title);
     console.log('createNote result:', result);
@@ -56,7 +56,7 @@ async function createNote() {
     store.selectNote(id);
     console.log('Note added to store');
   } catch (e: any) {
-    error.value = '创建笔记失败: ' + e.message;
+    error.value = '创建笔记失败：' + e.message;
     console.error('Error creating note:', e);
   }
 }
@@ -75,7 +75,7 @@ async function loadNotes() {
     const notes = await window.electronAPI.getAllNotes();
     store.setNotes(notes.sort((a, b) => b.updatedAt - a.updatedAt));
   } catch (e: any) {
-    error.value = '加载笔记失败: ' + e.message;
+    error.value = '加载笔记失败：' + e.message;
     console.error('Error loading notes:', e);
   }
 }

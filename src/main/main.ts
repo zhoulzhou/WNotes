@@ -10,7 +10,6 @@ function createWindow(): void {
   const { BrowserWindow } = require('electron');
   
   const preloadPath = path.join(__dirname, 'preload.js');
-  console.log('Preload path:', preloadPath);
   
   mainWindow = new BrowserWindow({
     width: 1200,
@@ -28,10 +27,7 @@ function createWindow(): void {
     mainWindow.webContents.openDevTools();
   } else {
     const htmlPath = path.join(__dirname, '../index.html');
-    console.log('Loading HTML file from:', htmlPath);
-    console.log('__dirname:', __dirname);
     mainWindow.loadFile(htmlPath);
-    mainWindow.webContents.openDevTools();
   }
 
   mainWindow.on('closed', () => {
@@ -47,17 +43,9 @@ function registerIpcHandlers(): void {
   });
 
   ipcMain.handle(IPC_CHANNELS.CREATE_NOTE, async (_event: any, id: string, title: string) => {
-    console.log('CREATE_NOTE called:', id, title);
-    try {
-      const filePath = await file.createNoteFile(id, title);
-      console.log('File created:', filePath);
-      const note = await database.createNote(id, title, filePath);
-      console.log('Database note created:', note);
-      return note;
-    } catch (error) {
-      console.error('Error creating note:', error);
-      throw error;
-    }
+    const filePath = await file.createNoteFile(id, title);
+    const note = await database.createNote(id, title, filePath);
+    return note;
   });
 
   ipcMain.handle(IPC_CHANNELS.DELETE_NOTE, async (_event: any, id: string) => {
@@ -100,7 +88,6 @@ function registerIpcHandlers(): void {
 const { app } = require('electron');
 
 app.whenReady().then(async () => {
-  console.log('App ready');
   await file.initializeDirectories();
   registerIpcHandlers();
   createWindow();
