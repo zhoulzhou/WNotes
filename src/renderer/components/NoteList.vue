@@ -1,26 +1,25 @@
-
-&lt;template&gt;
-  &lt;div class="note-list"&gt;
-    &lt;div class="header"&gt;
-      &lt;h1&gt;WNotes&lt;/h1&gt;
-      &lt;button class="new-note-btn" @click="createNote"&gt;
+<template>
+  <div class="note-list">
+    <div class="header">
+      <h1>WNotes</h1>
+      <button class="new-note-btn" @click="createNote">
         + 新建笔记
-      &lt;/button&gt;
-    &lt;/div&gt;
-    &lt;div class="list-container"&gt;
-      &lt;NoteItem
+      </button>
+    </div>
+    <div class="list-container">
+      <NoteItem
         v-for="note in store.notes"
         :key="note.id"
         :note="note"
         :is-selected="store.selectedNoteId === note.id"
         @select="selectNote"
         @delete="deleteNote"
-      /&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-&lt;/template&gt;
+      />
+    </div>
+  </div>
+</template>
 
-&lt;script setup lang="ts"&gt;
+<script setup lang="ts">
 import { onMounted } from 'vue';
 import { useStore } from '../store';
 import NoteItem from './NoteItem.vue';
@@ -52,15 +51,15 @@ async function deleteNote(id: string) {
 
 async function loadNotes() {
   const notes = await window.electronAPI.getAllNotes();
-  store.setNotes(notes.sort((a, b) =&gt; b.updatedAt - a.updatedAt));
+  store.setNotes(notes.sort((a, b) => b.updatedAt - a.updatedAt));
 }
 
-onMounted(() =&gt; {
+onMounted(() => {
   loadNotes();
 });
-&lt;/script&gt;
+</script>
 
-&lt;style scoped&gt;
+<style scoped>
 .note-list {
   display: flex;
   flex-direction: column;
@@ -101,4 +100,4 @@ onMounted(() =&gt; {
   flex: 1;
   overflow-y: auto;
 }
-&lt;/style&gt;
+</style>

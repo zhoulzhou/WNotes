@@ -1,21 +1,20 @@
+<template>
+  <div class="app-container">
+    <div class="left-panel">
+      <NoteList />
+    </div>
+    <div class="right-panel">
+      <NoteEditor />
+    </div>
+  </div>
+</template>
 
-&lt;template&gt;
-  &lt;div class="app-container"&gt;
-    &lt;div class="left-panel"&gt;
-      &lt;NoteList /&gt;
-    &lt;/div&gt;
-    &lt;div class="right-panel"&gt;
-      &lt;NoteEditor /&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-&lt;/template&gt;
-
-&lt;script setup lang="ts"&gt;
+<script setup lang="ts">
 import NoteList from './components/NoteList.vue';
 import NoteEditor from './components/NoteEditor.vue';
-&lt;/script&gt;
+</script>
 
-&lt;style scoped&gt;
+<style scoped>
 .app-container {
   display: flex;
   height: 100vh;
@@ -35,4 +34,4 @@ import NoteEditor from './components/NoteEditor.vue';
   flex-direction: column;
   overflow: hidden;
 }
-&lt;/style&gt;
+</style>

@@ -15,7 +15,7 @@ interface AppState {
 }
 
 export const useStore = defineStore('main', {
-  state: (): AppState =&gt; ({
+  state: (): AppState => ({
     notes: [],
     selectedNoteId: null,
   }),
@@ -30,21 +30,21 @@ export const useStore = defineStore('main', {
     },
     
     updateNoteTitle(id: string, title: string) {
-      const note = this.notes.find(n =&gt; n.id === id);
+      const note = this.notes.find(n => n.id === id);
       if (note) {
         note.title = title;
         note.updatedAt = Date.now();
-        this.notes = [...this.notes].sort((a, b) =&gt; b.updatedAt - a.updatedAt);
+        this.notes = [...this.notes].sort((a, b) => b.updatedAt - a.updatedAt);
       }
     },
     
     addNote(note: Note) {
       this.notes.unshift(note);
-      this.notes = [...this.notes].sort((a, b) =&gt; b.updatedAt - a.updatedAt);
+      this.notes = [...this.notes].sort((a, b) => b.updatedAt - a.updatedAt);
     },
     
     removeNote(id: string) {
-      this.notes = this.notes.filter(n =&gt; n.id !== id);
+      this.notes = this.notes.filter(n => n.id !== id);
       if (this.selectedNoteId === id) {
         this.selectedNoteId = null;
       }

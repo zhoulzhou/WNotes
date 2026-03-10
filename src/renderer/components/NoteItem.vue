@@ -1,23 +1,23 @@
 
-&lt;template&gt;
-  &lt;div 
+<template>
+  <div 
     :class="['note-item', { 'selected': isSelected }]"
     @click="onSelect"
-  &gt;
-    &lt;div class="note-content"&gt;
-      &lt;div class="note-title"&gt;{{ note.title }}&lt;/div&gt;
-      &lt;div class="note-time"&gt;{{ formattedTime }}&lt;/div&gt;
-    &lt;/div&gt;
-    &lt;button 
+  >
+    <div class="note-content">
+      <div class="note-title">{{ note.title }}</div>
+      <div class="note-time">{{ formattedTime }}</div>
+    </div>
+    <button 
       class="delete-btn"
       @click.stop="onDelete"
-    &gt;
+    >
       ×
-    &lt;/button&gt;
-  &lt;/div&gt;
-&lt;/template&gt;
+    </button>
+  </div>
+</template>
 
-&lt;script setup lang="ts"&gt;
+<script setup lang="ts">
 import { computed } from 'vue';
 import { Note } from '../store';
 import { formatTime } from '../utils/format';
@@ -27,26 +27,26 @@ interface Props {
   isSelected: boolean;
 }
 
-const props = defineProps&lt;Props&gt;();
-const emit = defineEmits&lt;{
+const props = defineProps<Props>();
+const emit = defineEmits<{
   select: [id: string];
   delete: [id: string];
-}&gt;();
+}>();
 
-const formattedTime = computed(() =&gt; formatTime(props.note.updatedAt));
+const formattedTime = computed(() => formatTime(props.note.updatedAt));
 
 function onSelect() {
   emit('select', props.note.id);
 }
 
 function onDelete() {
-  if (confirm(`确定要删除笔记 "${props.note.title}" 吗？`)) {
+  if (confirm(`确定要删除笔�?"${props.note.title}" 吗？`)) {
     emit('delete', props.note.id);
   }
 }
-&lt;/script&gt;
+</script>
 
-&lt;style scoped&gt;
+<style scoped>
 .note-item {
   display: flex;
   justify-content: space-between;
@@ -108,4 +108,4 @@ function onDelete() {
 .delete-btn:hover {
   background-color: #ffccc7;
 }
-&lt;/style&gt;
+</style>

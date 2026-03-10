@@ -1,27 +1,26 @@
-
-&lt;template&gt;
-  &lt;div class="note-editor"&gt;
-    &lt;div v-if="!selectedNote" class="placeholder"&gt;
-      &lt;div class="placeholder-text"&gt;请选择或创建笔记&lt;/div&gt;
-    &lt;/div&gt;
-    &lt;div v-else class="editor-content"&gt;
-      &lt;input
+<template>
+  <div class="note-editor">
+    <div v-if="!selectedNote" class="placeholder">
+      <div class="placeholder-text">请选择或创建笔记</div>
+    </div>
+    <div v-else class="editor-content">
+      <input
         v-model="title"
         class="title-input"
         placeholder="笔记标题"
         @input="onTitleChange"
-      /&gt;
-      &lt;MdEditor
+      />
+      <MdEditor
         v-model="content"
         :onDrop="onDrop"
         :onUploadImg="onUploadImg"
         class="md-editor"
-      /&gt;
-    &lt;/div&gt;
-  &lt;/div&gt;
-&lt;/template&gt;
+      />
+    </div>
+  </div>
+</template>
 
-&lt;script setup lang="ts"&gt;
+<script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 import { MdEditor } from 'md-editor-v3';
 import { useStore } from '../store';
@@ -33,14 +32,14 @@ const title = ref('');
 const content = ref('');
 let currentNoteId: string | null = null;
 
-const selectedNote = computed(() =&gt; 
-  store.notes.find(n =&gt; n.id === store.selectedNoteId)
+const selectedNote = computed(() => 
+  store.notes.find(n => n.id === store.selectedNoteId)
 );
 
 async function loadNoteContent() {
   if (!store.selectedNoteId) return;
   
-  const note = store.notes.find(n =&gt; n.id === store.selectedNoteId);
+  const note = store.notes.find(n => n.id === store.selectedNoteId);
   if (!note) return;
   
   currentNoteId = note.id;
@@ -49,10 +48,10 @@ async function loadNoteContent() {
   content.value = fileContent;
 }
 
-const saveNote = debounce(async () =&gt; {
+const saveNote = debounce(async () => {
   if (!currentNoteId) return;
   
-  const note = store.notes.find(n =&gt; n.id === currentNoteId);
+  const note = store.notes.find(n => n.id === currentNoteId);
   if (!note) return;
   
   await window.electronAPI.writeNoteFile(note.filePath, content.value);
@@ -65,23 +64,23 @@ function onTitleChange() {
 }
 
 watch(
-  () =&gt; content.value,
-  () =&gt; {
+  () => content.value,
+  () => {
     saveNote();
   }
 );
 
 watch(
-  () =&gt; store.selectedNoteId,
-  async () =&gt; {
+  () => store.selectedNoteId,
+  async () => {
     await loadNoteContent();
   }
 );
 
-async function onUploadImg(files: File[]): Promise&lt;string[]&gt; {
+async function onUploadImg(files: File[]): Promise<string[]> {
   if (!currentNoteId) return [];
   
-  const promises = files.map(async (file) =&gt; {
+  const promises = files.map(async (file) => {
     const buffer = Buffer.from(await file.arrayBuffer());
     const relativePath = await window.electronAPI.saveImage(buffer, currentNoteId);
     return relativePath;
@@ -90,16 +89,16 @@ async function onUploadImg(files: File[]): Promise&lt;string[]&gt; {
   return Promise.all(promises);
 }
 
-async function onDrop(files: File[]): Promise&lt;string[]&gt; {
+async function onDrop(files: File[]): Promise<string[]> {
   return onUploadImg(files);
 }
 
-onMounted(() =&gt; {
+onMounted(() => {
   loadNoteContent();
 });
-&lt;/script&gt;
+</script>
 
-&lt;style scoped&gt;
+<style scoped>
 .note-editor {
   display: flex;
   flex-direction: column;
@@ -156,4 +155,4 @@ onMounted(() =&gt; {
 :deep(.md-editor-container) {
   height: 100%;
 }
-&lt;/style&gt;
+</style>
