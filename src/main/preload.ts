@@ -17,6 +17,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   writeNoteFile: (filePath: string, content: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.WRITE_FILE, filePath, content),
 
-  saveImage: (file: Buffer, noteId: string) =>
-    ipcRenderer.invoke(IPC_CHANNELS.SAVE_IMAGE, file, noteId),
+  saveImage: (file: ArrayBuffer, noteId: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.SAVE_IMAGE, Buffer.from(file), noteId),
 });
