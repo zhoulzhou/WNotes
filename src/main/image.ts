@@ -23,10 +23,10 @@ export async function saveImage(
     await fs.writeFile(imagePath, fileBuffer);
     console.log('✓ 文件写入成功');
 
-    const relativePath = path.join('assets', 'images', noteId, fileName);
-    console.log('返回相对路径:', relativePath);
+    // 返回绝对路径以便在 HTML 中直接显示
+    console.log('返回绝对路径:', imagePath);
     console.log('===== 图片保存完成 =====');
-    return relativePath;
+    return imagePath;
   } catch (error: any) {
     console.error('===== 图片保存失败 =====');
     console.error('错误:', error);

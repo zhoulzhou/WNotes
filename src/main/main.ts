@@ -43,7 +43,8 @@ function registerIpcHandlers(): void {
   });
 
   ipcMain.handle(IPC_CHANNELS.CREATE_NOTE, async (_event: any, id: string, title: string) => {
-    const filePath = await file.createNoteFile(id, title);
+    const defaultContent = '新笔记内容';
+    const filePath = await file.createNoteFile(id, title, defaultContent);
     const note = await database.createNote(id, title, filePath);
     return note;
   });

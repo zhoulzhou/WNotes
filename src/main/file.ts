@@ -38,11 +38,11 @@ export async function writeNoteFile(filePath: string, content: string): Promise<
   }
 }
 
-export async function createNoteFile(noteId: string, title: string): Promise<string> {
+export async function createNoteFile(noteId: string, title: string, defaultContent?: string): Promise<string> {
   try {
     await initializeDirectories();
     const filePath = path.join(NOTES_DIR, `${noteId}.md`);
-    const content = `# ${title}\n\n`;
+    const content = defaultContent || `# ${title}\n\n`;
     await writeNoteFile(filePath, content);
     console.log('Created note file:', filePath);
     return filePath;

@@ -10,37 +10,29 @@
         placeholder="笔记标题"
         @input="onTitleChange"
       />
-      <MdEditor
-        v-model="content"
-        :onDrop="onDrop"
-        :onUploadImg="onUploadImg"
-        :preview="false"
-        :toolbars="toolbars"
-        :drag="true"
-        class="md-editor"
-      />
+      <div
+        ref="editorRef"
+        class="content-editor"
+        contenteditable="true"
+        @input="onContentChange"
+        @paste="handlePaste"
+        @drop="handleDrop"
+      ></div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
-import { MdEditor } from 'md-editor-v3';
+import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { useStore } from '../store';
 import { debounce } from '../utils/debounce';
 
 const store = useStore();
-
+const editorRef = ref<HTMLElement | null>(null);
 const title = ref('');
 const content = ref('');
 let currentNoteId: string | null = null;
-
-const toolbars = [
-  'bold', 'underline', 'italic', '-', 'title', 'strikeThrough', 'sub', 'sup',
-  'quote', 'unorderedList', 'orderedList', 'task', '-', 'codeRow', 'code',
-  'link', 'image', 'table', 'mermaid', 'katex', '-', 'revoke', 'next', 'save',
-  '=', 'pageFullscreen', 'fullscreen', 'preview', 'htmlPreview', 'catalog'
-];
+let isInternalChange = false;
 
 const selectedNote = computed(() => 
   store.notes.find(n => n.id === store.selectedNoteId)
@@ -50,17 +42,26 @@ async function loadNoteContent() {
   if (!store.selectedNoteId) return;
   const note = store.notes.find(n => n.id === store.selectedNoteId);
   if (!note) return;
+  
   currentNoteId = note.id;
   title.value = note.title;
+  
   const fileContent = await window.electronAPI.readNoteFile(note.filePath);
   content.value = fileContent;
+  
+  await nextTick();
+  if (editorRef.value) {
+    editorRef.value.innerHTML = fileContent;
+  }
 }
 
 const saveNote = debounce(async () => {
   if (!currentNoteId) return;
   const note = store.notes.find(n => n.id === currentNoteId);
   if (!note) return;
-  await window.electronAPI.writeNoteFile(note.filePath, content.value);
+  
+  const htmlContent = editorRef.value?.innerHTML || '';
+  await window.electronAPI.writeNoteFile(note.filePath, htmlContent);
   await window.electronAPI.updateNote(currentNoteId, title.value);
   store.updateNoteTitle(currentNoteId, title.value);
 }, 500);
@@ -69,81 +70,107 @@ function onTitleChange() {
   saveNote();
 }
 
-watch(() => content.value, () => { saveNote(); });
+function onContentChange() {
+  saveNote();
+}
+
+async function handlePaste(event: ClipboardEvent) {
+  event.preventDefault();
+  
+  const items = event.clipboardData?.items;
+  if (!items) return;
+  
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    
+    if (item.type.indexOf('image') !== -1) {
+      const file = item.getAsFile();
+      if (file) {
+        await insertImage(file);
+      }
+    } else if (item.type.indexOf('text/plain') !== -1) {
+      item.getAsString((text) => {
+        document.execCommand('insertText', false, text);
+      });
+    }
+  }
+}
+
+async function handleDrop(event: DragEvent) {
+  event.preventDefault();
+  event.stopPropagation();
+  
+  console.log('===== 检测到拖拽事件 =====');
+  console.log('DataTransfer items:', event.dataTransfer?.items);
+  console.log('Files:', event.dataTransfer?.files);
+  
+  const items = event.dataTransfer?.items;
+  if (!items) return;
+  
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    console.log('处理 item:', item.kind, item.type);
+    
+    if (item.kind === 'file' && item.type.indexOf('image') !== -1) {
+      const file = item.getAsFile();
+      console.log('获取到文件:', file?.name, file?.type);
+      if (file) {
+        await insertImage(file);
+      }
+    }
+  }
+}
+
+async function insertImage(file: File) {
+  console.log('插入图片:', file.name, file.type, file.size);
+  
+  if (!currentNoteId) {
+    alert('请先选择或创建一个笔记');
+    return;
+  }
+  
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+    const relativePath = await window.electronAPI.saveImage(uint8Array, currentNoteId);
+    
+    console.log('图片保存成功:', relativePath);
+    
+    const img = document.createElement('img');
+    img.src = relativePath;
+    img.alt = file.name;
+    img.style.maxWidth = '100%';
+    img.style.height = 'auto';
+    img.style.display = 'block';
+    img.style.margin = '10px 0';
+    
+    const selection = window.getSelection();
+    const range = selection?.getRangeAt(0);
+    
+    if (range) {
+      range.deleteContents();
+      range.insertNode(img);
+      range.collapse(false);
+      
+      const br = document.createElement('br');
+      range.insertNode(br);
+      range.collapse(false);
+    } else if (editorRef.value) {
+      editorRef.value.appendChild(img);
+      editorRef.value.appendChild(document.createElement('br'));
+    }
+    
+    console.log('✓ 图片插入成功');
+    onContentChange();
+  } catch (error) {
+    console.error('插入图片失败:', error);
+    alert(`插入图片 ${file.name} 失败：${error}`);
+  }
+}
 
 watch(() => store.selectedNoteId, async () => {
   await loadNoteContent();
 });
-
-async function onUploadImg(files: File[]): Promise<string[]> {
-  console.log('===== 开始上传图片 =====');
-  console.log('当前笔记 ID:', currentNoteId);
-  console.log('文件列表:', files);
-  console.log('window.electronAPI:', window.electronAPI);
-  
-  if (!currentNoteId) {
-    console.error('错误：没有当前笔记 ID');
-    alert('请先选择或创建一个笔记');
-    return [];
-  }
-  
-  if (!window.electronAPI) {
-    console.error('错误：electronAPI 未定义');
-    alert('系统错误：electronAPI 未定义');
-    return [];
-  }
-  
-  const imagePaths: string[] = [];
-  
-  for (const file of files) {
-    console.log('处理文件:', file.name, '类型:', file.type, '大小:', file.size);
-    
-    if (!file.type.startsWith('image/')) {
-      console.warn(`跳过非图片文件：${file.name}`);
-      continue;
-    }
-    
-    try {
-      console.log('读取文件为 ArrayBuffer...');
-      const arrayBuffer = await file.arrayBuffer();
-      console.log('ArrayBuffer 大小:', arrayBuffer.byteLength);
-      
-      console.log('转换为 Uint8Array...');
-      const uint8Array = new Uint8Array(arrayBuffer);
-      console.log('Uint8Array 长度:', uint8Array.length);
-      
-      console.log('调用 electronAPI.saveImage...');
-      const relativePath = await window.electronAPI.saveImage(uint8Array, currentNoteId);
-      console.log('返回的相对路径:', relativePath);
-      
-      const markdownImage = `\n![${file.name}](${relativePath})\n`;
-      console.log('生成的 Markdown:', markdownImage);
-      imagePaths.push(markdownImage);
-      
-      console.log(`✓ 图片 ${file.name} 上传成功`);
-    } catch (error) {
-      console.error('上传图片失败:', error);
-      console.error('错误详情:', JSON.stringify(error, null, 2));
-      alert(`上传图片 ${file.name} 失败：${error}`);
-    }
-  }
-  
-  console.log('===== 图片上传完成，共上传:', imagePaths.length, '张 =====');
-  return imagePaths;
-}
-
-async function onDrop(files: File[]): Promise<string[]> {
-  console.log('===== 检测到拖拽事件 =====');
-  console.log('拖拽的文件:', files);
-  console.log('文件数量:', files.length);
-  
-  if (files.length === 0) {
-    console.warn('没有检测到文件');
-    return [];
-  }
-  
-  return onUploadImg(files);
-}
 
 onMounted(() => {
   console.log('NoteEditor 组件已挂载');
@@ -195,30 +222,30 @@ onMounted(() => {
   border-bottom-color: #1890ff;
 }
 
-.md-editor {
+.content-editor {
   flex: 1;
-  overflow: auto;
+  overflow-y: auto;
+  font-size: 16px;
+  line-height: 1.6;
+  outline: none;
+  padding: 10px 0;
 }
 
-:deep(.md-editor) {
-  height: 100%;
-  border: none;
+.content-editor:empty:before {
+  content: '在此输入笔记内容...';
+  color: #999;
 }
 
-:deep(.md-editor-container) {
-  height: 100%;
+.content-editor img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 10px 0;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
-:deep(.md-editor-preview-btn) {
-  display: none !important;
-}
-
-:deep(.md-editor-content) {
-  width: 100% !important;
-  border-right: none !important;
-}
-
-:deep(.md-editor-preview-wrapper) {
-  display: none !important;
+.content-editor img:hover {
+  opacity: 0.9;
 }
 </style>
