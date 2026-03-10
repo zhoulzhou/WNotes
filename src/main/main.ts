@@ -32,18 +32,18 @@ function createWindow(): void {
 }
 
 function registerIpcHandlers(): void {
-  ipcMain.handle(IPC_CHANNELS.GET_ALL_NOTES, async () =&gt; {
+  ipcMain.handle(IPC_CHANNELS.GET_ALL_NOTES, async () => {
     return database.getAllNotes();
   });
 
-  ipcMain.handle(IPC_CHANNELS.CREATE_NOTE, async (_event, id: string, title: string) =&gt; {
+  ipcMain.handle(IPC_CHANNELS.CREATE_NOTE, async (_event, id: string, title: string) => {
     const filePath = await file.createNoteFile(id, title);
     await database.createNote(id, title, filePath);
     return { id, title, filePath };
   });
 
-  ipcMain.handle(IPC_CHANNELS.DELETE_NOTE, async (_event, id: string) =&gt; {
-    const note = database.getAllNotes().find(n =&gt; n.id === id);
+  ipcMain.handle(IPC_CHANNELS.DELETE_NOTE, async (_event, id: string) => {
+    const note = database.getAllNotes().find(n => n.id === id);
     if (note) {
       await file.deleteNoteFile(note.filePath);
     }
@@ -52,34 +52,34 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle(
     IPC_CHANNELS.UPDATE_NOTE,
-    async (_event, id: string, title: string) =&gt; {
+    async (_event, id: string, title: string) => {
       return database.updateNoteTitle(id, title);
     },
   );
 
   ipcMain.handle(
     IPC_CHANNELS.READ_FILE,
-    async (_event, filePath: string): Promise&lt;string&gt; =&gt; {
+    async (_event, filePath: string): Promise<string> => {
       return file.readNoteFile(filePath);
     },
   );
 
   ipcMain.handle(
     IPC_CHANNELS.WRITE_FILE,
-    async (_event, filePath: string, content: string): Promise&lt;void&gt; =&gt; {
+    async (_event, filePath: string, content: string): Promise<void> => {
       return file.writeNoteFile(filePath, content);
     },
   );
 
   ipcMain.handle(
     IPC_CHANNELS.SAVE_IMAGE,
-    async (_event, fileBuffer: Buffer, noteId: string): Promise&lt;string&gt; =&gt; {
+    async (_event, fileBuffer: Buffer, noteId: string): Promise<string> => {
       return image.saveImage(fileBuffer, noteId);
     },
   );
 }
 
-app.whenReady().then(async () =&gt; {
+app.whenReady().then(async () => {
   await file.initializeDirectories();
   registerIpcHandlers();
   createWindow();

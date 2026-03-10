@@ -6,7 +6,7 @@ const DATA_DIR = path.join(process.cwd(), 'data');
 const NOTES_DIR = path.join(DATA_DIR, 'notes');
 const IMAGES_DIR = path.join(DATA_DIR, 'assets', 'images');
 
-export async function initializeDirectories(): Promise&lt;void&gt; {
+export async function initializeDirectories(): Promise<void> {
   try {
     await fs.mkdir(NOTES_DIR, { recursive: true });
     await fs.mkdir(IMAGES_DIR, { recursive: true });
@@ -17,7 +17,7 @@ export async function initializeDirectories(): Promise&lt;void&gt; {
   }
 }
 
-export async function readNoteFile(filePath: string): Promise&lt;string&gt; {
+export async function readNoteFile(filePath: string): Promise<string> {
   try {
     const content = await fs.readFile(filePath, 'utf-8');
     console.log('Read note file:', filePath);
@@ -28,7 +28,7 @@ export async function readNoteFile(filePath: string): Promise&lt;string&gt; {
   }
 }
 
-export async function writeNoteFile(filePath: string, content: string): Promise&lt;void&gt; {
+export async function writeNoteFile(filePath: string, content: string): Promise<void> {
   try {
     await fs.writeFile(filePath, content, 'utf-8');
     console.log('Wrote note file:', filePath);
@@ -38,7 +38,7 @@ export async function writeNoteFile(filePath: string, content: string): Promise&
   }
 }
 
-export async function createNoteFile(noteId: string, title: string): Promise&lt;string&gt; {
+export async function createNoteFile(noteId: string, title: string): Promise<string> {
   try {
     await initializeDirectories();
     const filePath = path.join(NOTES_DIR, `${noteId}.md`);
@@ -52,7 +52,7 @@ export async function createNoteFile(noteId: string, title: string): Promise&lt;
   }
 }
 
-export async function deleteNoteFile(filePath: string): Promise&lt;void&gt; {
+export async function deleteNoteFile(filePath: string): Promise<void> {
   try {
     await fs.unlink(filePath);
     console.log('Deleted note file:', filePath);
@@ -62,7 +62,7 @@ export async function deleteNoteFile(filePath: string): Promise&lt;void&gt; {
   }
 }
 
-export async function createImageDirectory(noteId: string): Promise&lt;string&gt; {
+export async function createImageDirectory(noteId: string): Promise<string> {
   try {
     const dirPath = path.join(IMAGES_DIR, noteId);
     await fs.mkdir(dirPath, { recursive: true });
@@ -73,4 +73,3 @@ export async function createImageDirectory(noteId: string): Promise&lt;string&gt
     throw error;
   }
 }
-

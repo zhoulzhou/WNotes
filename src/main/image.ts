@@ -7,7 +7,7 @@ import { createImageDirectory } from './file';
 export async function saveImage(
   fileBuffer: Buffer,
   noteId: string
-): Promise&lt;string&gt; {
+): Promise<string> {
   try {
     const imageDir = await createImageDirectory(noteId);
     const fileName = `${Date.now()}.jpg`;
