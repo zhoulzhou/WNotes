@@ -1,5 +1,6 @@
-import { contextBridge, ipcRenderer } from 'electron';
 import { IPC_CHANNELS } from './ipc-channels';
+
+const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
   getAllNotes: () => ipcRenderer.invoke(IPC_CHANNELS.GET_ALL_NOTES),

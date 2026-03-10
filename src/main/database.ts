@@ -1,4 +1,3 @@
-import type DatabaseConstructor from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 
@@ -10,7 +9,7 @@ export interface Note {
   createdAt: number;
 }
 
-let dbInstance: DatabaseConstructor | null = null;
+let dbInstance: any = null;
 
 function getDatabasePath(): string {
   const dataDir = path.join(process.cwd(), 'data');
@@ -21,7 +20,7 @@ function getDatabasePath(): string {
   return path.join(dataDir, 'metadata.db');
 }
 
-function initializeDatabase(db: DatabaseConstructor): void {
+function initializeDatabase(db: any): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS notes (
       id TEXT PRIMARY KEY,
@@ -34,11 +33,12 @@ function initializeDatabase(db: DatabaseConstructor): void {
   console.log('Database initialized successfully');
 }
 
-export function getDatabase(): DatabaseConstructor {
+export function getDatabase(): any {
   if (!dbInstance) {
     const dbPath = getDatabasePath();
     console.log('Opening database at:', dbPath);
-    dbInstance = new DatabaseConstructor(dbPath);
+    const Database = require('better-sqlite3');
+    dbInstance = new Database(dbPath);
     dbInstance.pragma('journal_mode = WAL');
     initializeDatabase(dbInstance);
   }
