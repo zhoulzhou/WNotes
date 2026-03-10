@@ -1,6 +1,5 @@
 
 import sharp from 'sharp';
-import fs from 'fs/promises';
 import path from 'path';
 import { createImageDirectory } from './file';
 
@@ -14,7 +13,7 @@ export async function saveImage(
     const imagePath = path.join(imageDir, fileName);
 
     await sharp(fileBuffer)
-      .resize({ width: 1920, withoutEnlarging: true })
+      .resize({ width: 1920, withoutEnlargement: true })
       .jpeg({ quality: 80 })
       .toFile(imagePath);
 
