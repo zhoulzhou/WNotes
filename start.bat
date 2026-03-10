@@ -1,4 +1,4 @@
 @echo off
 echo Starting WNotes...
-npm.cmd run electron:preview
+powershell -ExecutionPolicy Bypass -Command "npm run electron:preview"
 pause
