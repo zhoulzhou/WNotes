@@ -7,7 +7,7 @@ import * as image from './image';
 let mainWindow: any = null;
 
 function createWindow(): void {
-  const { BrowserWindow, ipcMain } = require('electron');
+  const { BrowserWindow } = require('electron');
   
   mainWindow = new BrowserWindow({
     width: 1200,
@@ -30,15 +30,27 @@ function createWindow(): void {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+}
 
+function registerIpcHandlers(): void {
+  const { ipcMain } = require('electron');
+  
   ipcMain.handle(IPC_CHANNELS.GET_ALL_NOTES, async () => {
     return database.getAllNotes();
   });
 
   ipcMain.handle(IPC_CHANNELS.CREATE_NOTE, async (_event: any, id: string, title: string) => {
-    const filePath = await file.createNoteFile(id, title);
-    await database.createNote(id, title, filePath);
-    return { id, title, filePath };
+    console.log('CREATE_NOTE called:', id, title);
+    try {
+      const filePath = await file.createNoteFile(id, title);
+      console.log('File created:', filePath);
+      const note = await database.createNote(id, title, filePath);
+      console.log('Database note created:', note);
+      return note;
+    } catch (error) {
+      console.error('Error creating note:', error);
+      throw error;
+    }
   });
 
   ipcMain.handle(IPC_CHANNELS.DELETE_NOTE, async (_event: any, id: string) => {
@@ -81,7 +93,9 @@ function createWindow(): void {
 const { app } = require('electron');
 
 app.whenReady().then(async () => {
+  console.log('App ready');
   await file.initializeDirectories();
+  registerIpcHandlers();
   createWindow();
 });
 
