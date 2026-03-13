@@ -40,7 +40,7 @@ function onSelect() {
 }
 
 function onDelete() {
-  if (confirm(`确定要删除笔�?"${props.note.title}" 吗？`)) {
+  if (confirm(`确定要删除笔记"${props.note.title}" 吗？`)) {
     emit('delete', props.note.id);
   }
 }
