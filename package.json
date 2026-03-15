@@ -52,7 +52,9 @@
     },
     "files": [
       "dist/**/*",
-      "src/main/**/*"
+      "src/main/**/*",
+      "build/**/*",
+      "!data/**/*"
     ],
     "nsis": {
       "allowToChangeInstallationDirectory": true,

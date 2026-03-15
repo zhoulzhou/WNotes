@@ -150,3 +150,50 @@ export function deleteNote(id: string): boolean {
     throw error;
   }
 }
+
+export function searchNotes(query: string): Note[] {
+  try {
+    const db = getDatabase();
+    const searchTerm = `%${query}%`;
+    
+    // 搜索标题
+    const titleStmt = db.prepare(`
+      SELECT id, title, file_path AS filePath, updated_at AS updatedAt, created_at AS createdAt 
+      FROM notes 
+      WHERE title LIKE ? 
+      ORDER BY updated_at DESC
+    `);
+    const titleResults = titleStmt.all(searchTerm) as Note[];
+    
+    // 搜索内容（读取文件内容）
+    const allNotes = getAllNotes();
+    const contentResults: Note[] = [];
+    
+    for (const note of allNotes) {
+      // 跳过已经在标题搜索结果中的笔记
+      if (titleResults.find(n => n.id === note.id)) {
+        continue;
+      }
+      
+      try {
+        const fs = require('fs');
+        if (fs.existsSync(note.filePath)) {
+          const content = fs.readFileSync(note.filePath, 'utf-8');
+          if (content.includes(query)) {
+            contentResults.push(note);
+          }
+        }
+      } catch (error) {
+        console.error(`Error reading note file ${note.filePath}:`, error);
+        // 继续处理其他笔记
+      }
+    }
+    
+    const results = [...titleResults, ...contentResults];
+    console.log(`Search results for "${query}": ${results.length} notes found`);
+    return results;
+  } catch (error) {
+    console.error('Error searching notes:', error);
+    throw error;
+  }
+}

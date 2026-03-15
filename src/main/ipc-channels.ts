@@ -6,6 +6,7 @@ export const IPC_CHANNELS = {
   READ_FILE: 'read-file',
   WRITE_FILE: 'write-file',
   SAVE_IMAGE: 'save-image',
+  SEARCH_NOTES: 'search-notes',
 } as const;
 
 export type IpcChannel = typeof IPC_CHANNELS[keyof typeof IPC_CHANNELS];

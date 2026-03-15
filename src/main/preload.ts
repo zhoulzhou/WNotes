@@ -8,6 +8,7 @@ const IPC_CHANNELS = {
   READ_FILE: 'read-file',
   WRITE_FILE: 'write-file',
   SAVE_IMAGE: 'save-image',
+  SEARCH_NOTES: 'search-notes',
 };
 
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -18,4 +19,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   readNoteFile: (filePath: string) => ipcRenderer.invoke(IPC_CHANNELS.READ_FILE, filePath),
   writeNoteFile: (filePath: string, content: string) => ipcRenderer.invoke(IPC_CHANNELS.WRITE_FILE, filePath, content),
   saveImage: (file: ArrayBuffer, noteId: string) => ipcRenderer.invoke(IPC_CHANNELS.SAVE_IMAGE, Buffer.from(file), noteId),
+  searchNotes: (query: string) => ipcRenderer.invoke(IPC_CHANNELS.SEARCH_NOTES, query),
 });

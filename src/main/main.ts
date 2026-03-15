@@ -8,11 +8,75 @@ let mainWindow: any = null;
 let tray: any = null;
 
 function createTray(): void {
-  const { Tray, Menu, nativeImage } = require('electron');
-  const iconPath = path.join(__dirname, '../../build/icon.ico');
-  const trayIcon = nativeImage.createFromPath(iconPath);
+  const { Tray, Menu, nativeImage, app } = require('electron');
+  const fs = require('fs');
+  const path = require('path');
   
-  tray = new Tray(trayIcon);
+  console.log('===== 托盘图标创建信息 =====');
+  console.log('appPath:', app.getAppPath());
+  console.log('__dirname:', __dirname);
+  console.log('process.resourcesPath:', (process as any).resourcesPath);
+  
+  // 尝试多个可能的图标路径
+  let iconPath;
+  let foundPath = null;
+  
+  // 定义所有可能的路径
+  const possiblePaths = [
+    // 打包后的路径（resources/app.asar 或 resources/app）
+    (process as any).resourcesPath ? path.join((process as any).resourcesPath, 'app.asar.unpacked', 'build', 'icon.ico') : null,
+    (process as any).resourcesPath ? path.join((process as any).resourcesPath, 'app', 'build', 'icon.ico') : null,
+    (process as any).resourcesPath ? path.join((process as any).resourcesPath, 'build', 'icon.ico') : null,
+    // 开发环境路径
+    path.join(app.getAppPath(), 'build', 'icon.ico'),
+    path.join(__dirname, '../../build/icon.ico'),
+    path.join(__dirname, '../../../build/icon.ico'),
+    path.join(__dirname, '../../../../build/icon.ico'),
+  ].filter(Boolean);
+  
+  console.log('可能的路径列表:');
+  for (const p of possiblePaths) {
+    if (!p) continue;
+    console.log('  -', p);
+    try {
+      const exists = fs.existsSync(p);
+      console.log('    存在:', exists);
+      if (exists && !foundPath) {
+        foundPath = p;
+        console.log('    ✓ 使用此路径');
+      }
+    } catch (e: any) {
+      console.log('    错误:', e.message);
+    }
+  }
+  
+  iconPath = foundPath;
+  
+  if (!iconPath) {
+    console.error('❌ 未找到图标文件！');
+    // 如果找不到图标，使用空白图标
+    tray = new Tray(nativeImage.createEmpty());
+    console.warn('使用空白图标');
+  } else {
+    try {
+      console.log('尝试加载图标:', iconPath);
+      const trayIcon = nativeImage.createFromPath(iconPath);
+      if (trayIcon.isEmpty()) {
+        console.error('❌ 图标文件为空或格式不正确');
+        tray = new Tray(nativeImage.createEmpty());
+      } else {
+        const size = trayIcon.getSize();
+        console.log('✓ 创建托盘图标成功');
+        console.log('  图标尺寸:', `${size.width}x${size.height}`);
+        console.log('  图标路径:', iconPath);
+        tray = new Tray(trayIcon);
+      }
+    } catch (error: any) {
+      console.error('❌ 创建图标失败:', error);
+      tray = new Tray(nativeImage.createEmpty());
+    }
+  }
+  
   tray.setToolTip('WNotes');
   
   const contextMenu = Menu.buildFromTemplate([
@@ -31,9 +95,16 @@ function createTray(): void {
     {
       label: '退出',
       click: () => {
+        // 先销毁托盘图标
+        if (tray) {
+          tray.destroy();
+          tray = null;
+        }
+        // 关闭窗口
         if (mainWindow) {
           mainWindow.close();
         }
+        // 退出应用
         app.quit();
       },
     },
@@ -50,6 +121,8 @@ function createTray(): void {
       mainWindow.focus();
     }
   });
+  
+  console.log('✓ 托盘创建完成');
 }
 
 function createWindow(): void {
@@ -136,6 +209,13 @@ function registerIpcHandlers(): void {
       return image.saveImage(fileBuffer, noteId);
     },
   );
+
+  ipcMain.handle(
+    IPC_CHANNELS.SEARCH_NOTES,
+    async (_event: any, query: string) => {
+      return database.searchNotes(query);
+    },
+  );
 }
 
 const { app } = require('electron');
@@ -148,8 +228,21 @@ app.whenReady().then(async () => {
 });
 
 app.on('window-all-closed', () => {
+  // 销毁托盘图标
+  if (tray) {
+    tray.destroy();
+    tray = null;
+  }
   if (process.platform !== 'darwin') {
     app.quit();
+  }
+});
+
+// 应用退出前确保销毁托盘图标
+app.on('before-quit', () => {
+  if (tray) {
+    tray.destroy();
+    tray = null;
   }
 });
 
