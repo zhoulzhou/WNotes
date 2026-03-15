@@ -5,6 +5,52 @@ import * as file from './file';
 import * as image from './image';
 
 let mainWindow: any = null;
+let tray: any = null;
+
+function createTray(): void {
+  const { Tray, Menu, nativeImage } = require('electron');
+  const iconPath = path.join(__dirname, '../../build/icon.ico');
+  const trayIcon = nativeImage.createFromPath(iconPath);
+  
+  tray = new Tray(trayIcon);
+  tray.setToolTip('WNotes');
+  
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: '显示 WNotes',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+          if (mainWindow.isMinimized()) {
+            mainWindow.restore();
+          }
+          mainWindow.focus();
+        }
+      },
+    },
+    {
+      label: '退出',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.close();
+        }
+        app.quit();
+      },
+    },
+  ]);
+  
+  tray.setContextMenu(contextMenu);
+  
+  tray.on('double-click', () => {
+    if (mainWindow) {
+      mainWindow.show();
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
+      mainWindow.focus();
+    }
+  });
+}
 
 function createWindow(): void {
   const { BrowserWindow } = require('electron');
@@ -29,6 +75,12 @@ function createWindow(): void {
     const htmlPath = path.join(__dirname, '../index.html');
     mainWindow.loadFile(htmlPath);
   }
+
+  // 阻止窗口关闭时退出应用，而是隐藏到系统托盘
+  mainWindow.on('close', (event: any) => {
+    event.preventDefault();
+    mainWindow.hide();
+  });
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -91,6 +143,7 @@ const { app } = require('electron');
 app.whenReady().then(async () => {
   await file.initializeDirectories();
   registerIpcHandlers();
+  createTray();
   createWindow();
 });
 
