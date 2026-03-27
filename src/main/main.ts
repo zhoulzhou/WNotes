@@ -1,3 +1,4 @@
+
 import * as path from 'path';
 import { IPC_CHANNELS } from './ipc-channels';
 import * as database from './database';
@@ -6,6 +7,7 @@ import * as image from './image';
 
 let mainWindow: any = null;
 let tray: any = null;
+let isQuitting = false;
 
 function createTray(): void {
   const { Tray, Menu, nativeImage, app } = require('electron');
@@ -95,6 +97,7 @@ function createTray(): void {
     {
       label: '退出',
       click: () => {
+        isQuitting = true;
         // 先销毁托盘图标
         if (tray) {
           tray.destroy();
@@ -151,8 +154,10 @@ function createWindow(): void {
 
   // 阻止窗口关闭时退出应用，而是隐藏到系统托盘
   mainWindow.on('close', (event: any) => {
-    event.preventDefault();
-    mainWindow.hide();
+    if (!isQuitting) {
+      event.preventDefault();
+      mainWindow.hide();
+    }
   });
 
   mainWindow.on('closed', () => {
@@ -240,6 +245,7 @@ app.on('window-all-closed', () => {
 
 // 应用退出前确保销毁托盘图标
 app.on('before-quit', () => {
+  isQuitting = true;
   if (tray) {
     tray.destroy();
     tray = null;
